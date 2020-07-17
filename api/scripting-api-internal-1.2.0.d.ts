@@ -540,6 +540,9 @@ declare class Capsule extends AnisotropicItem {
     height: number;
     /** @deprecated */ setHeight(h: number): void;
 }
+declare namespace DataSource {
+    function connect(endpoint: string): Promise<Connection>;
+}
 declare namespace ImmersiveReader {
     function launchAsync(content: {
         readonly title?: string;
@@ -953,6 +956,12 @@ declare namespace RayCast {
          */
         readonly point: Vector3;
     }
+}
+declare class Connection {
+    listModelIds(): Promise<Array<string>>;
+    createModel(): Promise<string>;
+    loadModel(modelId: string): Promise<void>;
+    unloadModel(): void;
 }
 /**
  *Represents 3D points and vectors.
@@ -1559,6 +1568,62 @@ declare class EllipsoidItemBase extends AnisotropicItem {
      * `transform`.`scale` factor._
      */
     radiusZ: number;
+}
+declare class Http {
+    constructor();
+    method: string;
+    url: string;
+    readonly headers: Http.MutableHeaders;
+    contentType(ts_type: string): Http;
+    basicAuthentication(user: string, password: string): Http;
+    noAuthentication(): Http;
+    header(name: string, value: string): Http;
+    header(name: string, values: Iterable<string>): Http;
+    clear(): Http;
+    send(): Http.Request;
+    send(content: string): Http.Request;
+    send(content: ArrayBuffer): Http.Request;
+    static get(url: string): Http;
+    static post(url: string): Http;
+    static put(url: string): Http;
+    static delete(url: string): Http;
+    static patch(url: string): Http;
+}
+declare namespace Http {
+    class Response {
+        readonly status: number;
+        readonly headers: Http.Headers;
+        readonly content: ArrayBuffer;
+        readonly textContent: string;
+        readonly responseUrl: string;
+    }
+    interface MutableHeaders extends Http.Headers {
+        set(name: string, value: string): void;
+        set(name: string, values: Iterable<string>): void;
+        add(name: string, value: string): void;
+        add(name: string, values: Iterable<string>): void;
+        remove(name: string, value: string): void;
+        remove(name: string, values: Iterable<string>): void;
+        remove(name: string): void;
+        clear(): void;
+        get(name: string): List<string>;
+        getSingle(name: string): string;
+        contains(name: string): boolean;
+        contains(name: string, value: string): boolean;
+        readonly headerNames: List<string>;
+    }
+    interface Headers {
+        get(name: string): List<string>;
+        getSingle(name: string): string;
+        contains(name: string): boolean;
+        contains(name: string, value: string): boolean;
+        readonly headerNames: List<string>;
+    }
+    class Request {
+        readonly response: Promise<Http.Response>;
+        readonly progress: ReadableProperty<number>;
+        cancel(): void;
+    }
 }
 declare namespace IDE {
     /** @deprecated */ function allowEditObjects(show: boolean): void;
@@ -3927,7 +3992,10 @@ declare namespace Scene {
     const name: string;
     class Element {
         onLayout(handler: (pos: Vector2, size: Vector2) => void): Disposable;
+        onPressDown(handler: (t: Vector2) => void): Disposable;
+        onPressUp(handler: (t: Vector2) => void): Disposable;
         onClick(handler: () => void): Disposable;
+        onHide(handler: () => void): Disposable;
     }
     namespace Editor {
         /**
@@ -3962,6 +4030,7 @@ declare namespace Scene {
         function closeItemInspector(): void;
         function onElementAdded(tag: string, handler: (t: Scene.Element) => void): Disposable;
         function findElement(tag: string): Scene.Element;
+        function getLayer(layer: "scene" | "main" | "toolbar" | "inspector" | "ui" | "script" | "dialog" | "captions" | "popup"): GUI.Parent;
     }
 }
 interface Utterance {
@@ -4502,32 +4571,6 @@ declare namespace GUI {
      *Returns the screen `Context` of this device.
      */
     const screen: GUI.Context;
-    /**
-     *Toggles visibility of the play button in the header.
-     */
-    let playButtonVisible: boolean;
-    /**
-     *Toggles interaction of the play button.
-     *
-     * If `disabled`, button does not register click events and assumes `disabled` visual style.
-     */
-    let playButtonEnabled: boolean;
-    /**
-     *Toggles visibility of help button in the header.
-     */
-    let helpButtonVisible: boolean;
-    /**
-     *Toggles visibility of the item library.
-     *
-     * **Note:** Only works for scenes in `Activity`- mode.
-     */
-    let objectLibraryVisible: boolean;
-    /**
-     *Toggles visibility of the environment settings.
-     *
-     * **Note:** Only works for scenes in `Activity`- mode.
-     */
-    let environmentSettingsVisible: boolean;
     /** @deprecated */ function createButton(options: GUI.ButtonOptions): GUI.Button;
     /** @deprecated */ const screenSize: Vector2;
     function showWebPopup(options: {
@@ -5248,7 +5291,6 @@ declare namespace GUI {
         text: string;
         placeholder: string;
         readonly horizontalAlignment: "center" | "left" | "right";
-        readonly verticalAlignment: "top" | "center" | "bottom";
         readOnly: boolean;
         spellcheck: boolean;
         focused: boolean;
@@ -6179,7 +6221,6 @@ declare namespace GUI {
         readonly fontStyle?: "regular" | "medium" | "demibold" | "bold" | "heavy";
         /** @deprecated */ readonly textAlignment?: "center" | "left" | "right";
         readonly horizontalAlignment?: "center" | "left" | "right";
-        readonly verticalAlignment?: "top" | "center" | "bottom";
         readonly textColor?: (ColorWithAlpha | Color);
         readonly padding?: (number | Insets);
         readonly focused?: boolean;
@@ -6487,24 +6528,6 @@ declare namespace GUI {
          *@deprecated use `childViews`.remove()
          */
         remove(view: GUI.BaseView): void;
-    }
-    class DxTextInput extends GUI.BaseView {
-        constructor(options: GUI.TextInputOptions);
-        text: string;
-        placeholder: string;
-        readonly horizontalAlignment: "center" | "left" | "right";
-        readonly verticalAlignment: "top" | "center" | "bottom";
-        readOnly: boolean;
-        focused: boolean;
-        onValueChange(handler: (t: string) => void): Disposable;
-        onStartEdit(handler: () => void): Disposable;
-        onEndEdit(handler: () => void): Disposable;
-        characterLimit: number;
-        setTextColor(color: (ColorWithAlpha | Color)): void;
-        setPlaceholderColor(color: (ColorWithAlpha | Color)): void;
-        padding: Insets;
-        setPadding(padding: number): void;
-        setPadding(left: number, top: number, right: number, bottom: number): void;
     }
     class Slider extends GUI.BaseButton {
         constructor(options: GUI.SliderOptions);
@@ -6822,7 +6845,7 @@ declare namespace GUI {
          *
          *@param handler function to call.
          */
-        onResize(handler: (t: Vector2) => void): void;
+        onResize(handler: (t: Vector2) => void): Disposable;
         /**
          *@return screen orientation of this `Context`
          */
@@ -6876,7 +6899,7 @@ declare namespace GUI {
          *
          *@deprecated
          */
-        createDxTextInput(options: GUI.TextInputOptions): GUI.DxTextInput;
+        createDxTextInput(options: GUI.TextInputOptions): GUI.VRTextInput;
         /**
          *Creates a `Stack` in this context.
          *
@@ -7615,6 +7638,24 @@ declare namespace GUI {
         readonly ignoreStretch?: boolean;
     }
     type EditorTabType = "script" | "coblocks";
+    class VRTextInput extends GUI.BaseView {
+        constructor(options: GUI.TextInputOptions);
+        text: string;
+        placeholder: string;
+        readonly horizontalAlignment: "center" | "left" | "right";
+        readonly verticalAlignment: "top" | "center" | "bottom";
+        readOnly: boolean;
+        focused: boolean;
+        onValueChange(handler: (t: string) => void): Disposable;
+        onStartEdit(handler: () => void): Disposable;
+        onEndEdit(handler: () => void): Disposable;
+        characterLimit: number;
+        setTextColor(color: (ColorWithAlpha | Color)): void;
+        setPlaceholderColor(color: (ColorWithAlpha | Color)): void;
+        padding: Insets;
+        setPadding(padding: number): void;
+        setPadding(left: number, top: number, right: number, bottom: number): void;
+    }
     /**
      *Defines a dropdown option element.
      *
@@ -7717,8 +7758,8 @@ declare namespace Settings {
      */
     function setFeature(permissionName: string, enabled: boolean): void;
     function getFeature(permissionName: string): boolean;
-    function setActivityFeature(activityPermission: "edit_objects" | "inspector" | "physics_properties" | "bubble_2d" | "bubble_rotation" | "resize_controls_3d" | "toolbar" | "create_objects" | "video_upload" | "sound_upload" | "image_assets" | "model_assets" | "mute_button" | "restart_scene" | "record_video" | "vr_button" | "ar_button" | "gyroscope_button" | "fs_session_panel" | "fs_space_creation" | "edit_stage" | "snapping" | "scene_switcher" | "help_button" | "player_mode" | "rotation_circle", enabled: boolean): void;
-    function getActivityFeature(activityPermission: "edit_objects" | "inspector" | "physics_properties" | "bubble_2d" | "bubble_rotation" | "resize_controls_3d" | "toolbar" | "create_objects" | "video_upload" | "sound_upload" | "image_assets" | "model_assets" | "mute_button" | "restart_scene" | "record_video" | "vr_button" | "ar_button" | "gyroscope_button" | "fs_session_panel" | "fs_space_creation" | "edit_stage" | "snapping" | "scene_switcher" | "help_button" | "player_mode" | "rotation_circle"): boolean;
+    function setActivityFeature(activityPermission: "edit_objects" | "inspector" | "physics_properties" | "bubble_2d" | "bubble_rotation" | "resize_controls_3d" | "toolbar" | "create_objects" | "video_upload" | "sound_upload" | "image_assets" | "model_assets" | "mute_button" | "restart_scene" | "record_video" | "vr_button" | "ar_button" | "gyroscope_button" | "scene_list" | "hierarchy" | "new_scene" | "show_templates" | "edit_stage" | "snapping" | "scene_switcher" | "help_button" | "player_mode" | "rotation_circle", enabled: boolean): void;
+    function getActivityFeature(activityPermission: "edit_objects" | "inspector" | "physics_properties" | "bubble_2d" | "bubble_rotation" | "resize_controls_3d" | "toolbar" | "create_objects" | "video_upload" | "sound_upload" | "image_assets" | "model_assets" | "mute_button" | "restart_scene" | "record_video" | "vr_button" | "ar_button" | "gyroscope_button" | "scene_list" | "hierarchy" | "new_scene" | "show_templates" | "edit_stage" | "snapping" | "scene_switcher" | "help_button" | "player_mode" | "rotation_circle"): boolean;
     /**
      *### Only for internal development
      *
@@ -10216,6 +10257,7 @@ declare namespace Dev {
     function addShapedBubble(item: BaseItem, text: string, color: Color): void;
     function addShapedBubble(item: BaseItem, text: string, color: Color, contour: Array<number>, textArea: Rect, attachPoint: Vector2): void;
     function createAssetModel(modelId: string, pos: Vector3): Array<BaseItem>;
+    function getGeomData(): Array<number>;
     namespace ColorGrading {
         let enabled: boolean;
         let whiteTemperature: number;
